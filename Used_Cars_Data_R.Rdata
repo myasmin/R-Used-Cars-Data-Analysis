@@ -1,241 +1,206 @@
-{
-  "nbformat": 4,
-  "nbformat_minor": 0,
-  "metadata": {
-    "colab": {
-      "name": "Used Cars Data.R",
-      "provenance": [],
-      "authorship_tag": "ABX9TyNdLgAYWVKIJp0gwIEjwhZv",
-      "include_colab_link": true
-    },
-    "kernelspec": {
-      "name": "python3",
-      "display_name": "Python 3"
-    },
-    "language_info": {
-      "name": "python"
-    }
-  },
-  "cells": [
-    {
-      "cell_type": "markdown",
-      "metadata": {
-        "id": "view-in-github",
-        "colab_type": "text"
-      },
-      "source": [
-        "<a href=\"https://colab.research.google.com/github/myasmin/Used-Cars-Data-Analysis/blob/master/Used_Cars_Data_R.Rdata\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
-      ]
-    },
-    {
-      "cell_type": "code",
-      "metadata": {
-        "id": "i2HCQ47ImHE9"
-      },
-      "source": [
-        "rm(list=ls())\n",
-        "setwd(\"D:/R\")\n",
-        "library(tidyverse)\n",
-        "library(plotly)\n",
-        "require(forcats)\n",
-        "\n",
-        "######################## Import Data from CSV file ########################\n",
-        "\n",
-        "vehicle <- read_csv(\"D:/Documents/Used cars data from craigslist/craigslistVehicles.csv\")\n",
-        "slice(vehicle,1:10)\n",
-        "\n",
-        "vehicle %>% \n",
-        "           slice(1:10)%>% \n",
-        "           summarise()\n",
-        "\n",
-        "rawdata <- vehicle %>%\n",
-        "  select( -c(url , city_url, title_status,VIN, image_url))\n",
-        "\n",
-        "####### EDA of All Variables \n",
-        "\n",
-        "cutoffpoint <- boxplot.stats(rawdata$price)$out %>%\n",
-        "  min()\n",
-        "cutoffpoint\n",
-        "\n",
-        "cleandata_price <- rawdata %>% \n",
-        "  filter (price != 0 & !is.na(price) & price <= cutoffpoint)\n",
-        "\n",
-        "count(cleandata_price)/count(rawdata)\n",
-        "\n",
-        "head(cleandata_price)\n",
-        "names(cleandata_price)\n",
-        "summary(cleandata_price)\n",
-        "\n",
-        "boxplot(cleandata_price$price)\n",
-        "\n",
-        "priceboxplot <- ggplot(data=cleandata_price, aes(y=price)) +\n",
-        "  geom_boxplot(outlier.colour = \"blue\", outlier.shape = 1)\n",
-        "\n",
-        "\n",
-        "ggplotly(priceboxplot)\n",
-        "\n",
-        "qplot(cleandata_price$price)\n",
-        "\n",
-        "ggplot(data=cleandata_price, aes(x=price)) +\n",
-        "  geom_histogram(binwidth =1000) \n",
-        "\n",
-        "\n",
-        "# Trading comparison by manufacturer\n",
-        "\n",
-        "manudata<-rawdata %>%\n",
-        "           drop_na(manufacturer) %>% \n",
-        "           ggplot()+\n",
-        "           geom_bar(aes(x=fct_infreq(manufacturer)),stat =\"count\")+\n",
-        "           coord_flip()\n",
-        "\n",
-        "ggplotly(manudata)\n",
-        "\n",
-        "# Comparison of Price by manufacturer\n",
-        "\n",
-        "price_manu<- cleandata_price %>%\n",
-        "                 drop_na(manufacturer) %>% \n",
-        "                 group_by(manufacturer) %>% \n",
-        "                 filter(n() >= 2000 )\n",
-        "  \n",
-        "pm <-ggplot(data=price_manu,mapping=aes(x=price, colour = manufacturer, fill = manufacturer)) + \n",
-        " geom_histogram(aes(y=..density..), alpha=0.5,position=\"identity\")+\n",
-        " geom_density(alpha=.2)\n",
-        " pm + facet_wrap(manufacturer ~ .)\n",
-        " \n",
-        "                  \n",
-        "# Trading by state\n",
-        "\n",
-        "cars_state <- rawdata %>% \n",
-        "    mutate(state = str_sub(city,-2,-1)) %>%\n",
-        "    group_by(state) %>%\n",
-        "    ggplot() +\n",
-        "    geom_bar(aes(x=fct_infreq(state)),stat =\"count\")\n",
-        "\n",
-        "ggplotly(cars_state)\n",
-        "  \n",
-        "\n",
-        "# Trading considering cylinders\n",
-        "rawdata %>% \n",
-        "  drop_na(cylinders) %>% \n",
-        "  group_by(cylinders) %>%\n",
-        "  ggplot() +\n",
-        "  geom_bar(aes(x=fct_infreq(cylinders)),stat =\"count\")\n",
-        "\n",
-        "\n",
-        "# Trading considering fuel\n",
-        "rawdata %>% \n",
-        "  drop_na(fuel) %>% \n",
-        "  group_by(fuel) %>%\n",
-        "  ggplot() +\n",
-        "  geom_bar(aes(x=fct_infreq(fuel)),stat =\"count\")\n",
-        "\n",
-        "# Trading considering odometer\n",
-        "cleandata_price %>% \n",
-        "  drop_na(odometer) %>% \n",
-        "  ggplot(aes(x=odometer,y=price)) +\n",
-        "  geom_boxplot()\n",
-        "\n",
-        "# Trading considering transmission\n",
-        "rawdata %>% \n",
-        "  drop_na(transmission) %>% \n",
-        "  group_by(transmission) %>%\n",
-        "  ggplot() +\n",
-        "  geom_bar(aes(x=fct_infreq(transmission)),stat =\"count\")\n",
-        "\n",
-        "# Trading considering drive\n",
-        "rawdata %>% \n",
-        "  drop_na(drive) %>% \n",
-        "  group_by(drive) %>%\n",
-        "  ggplot() +\n",
-        "  geom_bar(aes(x=fct_infreq(drive)),stat =\"count\")\n",
-        "\n",
-        "# Trading considering size\n",
-        "rawdata %>% \n",
-        "  drop_na(size) %>% \n",
-        "  group_by(size) %>%\n",
-        "  ggplot() +\n",
-        "  geom_bar(aes(x=fct_infreq(size)),stat =\"count\")\n",
-        "\n",
-        "# Trading considering type\n",
-        "rawdata %>% \n",
-        "  drop_na(type) %>% \n",
-        "  group_by(type) %>%\n",
-        "  ggplot() +\n",
-        "  geom_bar(aes(x=fct_infreq(type)),stat =\"count\")\n",
-        "\n",
-        "# Trading considering type\n",
-        "rawdata %>% \n",
-        "  drop_na(paint_color) %>% \n",
-        "  group_by(paint_color) %>%\n",
-        "  ggplot() +\n",
-        "  geom_bar(aes(x=fct_infreq(paint_color)),stat =\"count\")\n",
-        "\n",
-        "# Model development \n",
-        "cleandata_model<-lm(data=cleandata_price,price ~ city + manufacturer + condition + cylinders+ fuel+ odometer+ transmission+ drive + size + type + paint_color)\n",
-        "summary(cleandata_model)\n",
-        "\n",
-        "view(cleandata_model)\n",
-        "dev.off()\n",
-        "##################################################################################\n",
-        "\n",
-        "\n",
-        "# # Trading considering the lat and long\n",
-        "# \n",
-        "# \n",
-        "# vehiclemap<-map_data('state')\n",
-        "# \n",
-        "#   ggplot()+\n",
-        "#   geom_polygon(data=vehiclemap,aes(x=long, y=lat, group = group),color=\"white\", fill=\"grey28\")+\n",
-        "#   geom_point(data=rawdata, aes(x=long,y=lat),alpha = .5)\n",
-        "# \n",
-        "# # \n",
-        "\n",
-        "library(GGally)\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "# finaldata %>% \n",
-        "#   group_by(manufacturer) %>%\n",
-        "#   summarise(Count = n()) %>%\n",
-        "#   ggplot(aes(reorder(manufacturer, Count),count)) +\n",
-        "#   geom_bar(stat = \"identity\") + \n",
-        "#   coord_flip()\n",
-        "\n",
-        "finaldata %>% \n",
-        "     group_by(manufacturer) %>%\n",
-        "  #   summarise(Count = n())\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "# hist(mydata$price)\n",
-        "# boxplot(mydata$price)\n",
-        "# findout<- boxplot.stats(mydata$price)\n",
-        "# min(findout$out)\n",
-        "\n",
-        "## the majority trading is below 38905 USD, so we focus our interest on the trading dataset that are below 38905 USD ##\n",
-        "#mydata2<- mydata %>% \n",
-        "#  filter(mydata$price is.na & mydata$price != 0 )\n",
-        "\n",
-        "# mydata3<- mydata %>%\n",
-        "#                  filter(mydata$price <38905 & mydata$price != 0 )\n",
-        "# boxplot(mydata3$price)\n",
-        "# hist(mydata3$price,breaks= 500)\n",
-        "# nrow(mydata3)/nrow(mydata)*100\n",
-        "\n",
-        "## our dataset in consideration will be the mydata3 dataset ##\n",
-        "\n",
-        "\n",
-        "\n"
-      ],
-      "execution_count": null,
-      "outputs": []
-    }
-  ]
-}
+rm(list=ls())
+setwd("D:/Projects/R/Used Cars Data Analysis")
+library(tidyverse)
+library(plotly)
+require(forcats)
+
+######################## Import Data from CSV file ########################
+
+vehicle <- read_csv("D:/Projects/R/Used Cars Data Analysis/vehicles.csv")
+head(vehicle)
+colnames(vehicle)
+summary(vehicle)
+
+
+rawdata <-vehicle %>%
+  select(-c(url , region_url, title_status,VIN, image_url, description, posting_date))
+
+####### EDA of All Variables 
+
+cutoffpoint <- boxplot.stats(vehicle$price)$out %>%
+  min()
+cutoffpoint
+
+cleandata_price <- vehicle %>%
+  select(-c(url , region_url, title_status,VIN, image_url, description, posting_date))%>%
+  filter (price != 0 & !is.na(price) & price <= cutoffpoint)
+
+count(cleandata_price)/count(vehicle)
+
+head(cleandata_price)
+names(cleandata_price)
+summary(cleandata_price)
+
+boxplot(cleandata_price$price)
+
+priceboxplot <- ggplot(data=cleandata_price, aes(y=price)) +
+  geom_boxplot(outlier.colour = "blue", outlier.shape = 1)
+
+ggplotly(priceboxplot)
+summary(priceboxplot)
+
+
+qplot(cleandata_price$price)
+ggplot(data=cleandata_price, aes(x=price)) +
+  geom_histogram(binwidth =1000) 
+
+
+# Trading comparison by manufacturer
+
+manudata<-vehicle %>%
+  select(-c(url , region_url, title_status,VIN, image_url, description, posting_date))%>%
+  drop_na(manufacturer) %>% 
+  ggplot()+
+  geom_bar(aes(x=fct_infreq(manufacturer)),stat ="count")+
+  coord_flip()
+
+ggplotly(manudata)
+
+# Comparison of Price by manufacturer
+
+price_manu<- cleandata_price %>%
+  drop_na(manufacturer) %>% 
+  group_by(manufacturer) %>% 
+  filter(n() >= 2000 )
+
+pm <-ggplot(data=price_manu,mapping=aes(x=price, colour = manufacturer, fill = manufacturer)) + 
+  geom_histogram(aes(y=..density..), alpha=0.5,position="identity")+
+  geom_density(alpha=.2)
+pm + facet_wrap(manufacturer ~ .)
+
+
+# Trading by state
+
+cars_state <- rawdata %>% 
+  mutate(state = str_sub(region,-2,-1)) %>%
+  group_by(state) %>%
+  ggplot() +
+  geom_bar(aes(x=fct_infreq(state)),stat ="count")
+
+ggplotly(cars_state)
+
+
+# Trading considering cylinders
+rawdata %>% 
+  drop_na(cylinders) %>% 
+  group_by(cylinders) %>%
+  ggplot() +
+  geom_bar(aes(x=fct_infreq(cylinders)),stat ="count")
+
+
+# Trading considering fuel
+rawdata %>% 
+  drop_na(fuel) %>% 
+  group_by(fuel) %>%
+  ggplot() +
+  geom_bar(aes(x=fct_infreq(fuel)),stat ="count")
+
+# Trading considering odometer
+cleandata_price %>% 
+  drop_na(odometer) %>% 
+  ggplot(aes(x=odometer,y=price)) +
+  geom_boxplot()
+
+# Trading considering transmission
+rawdata %>% 
+  drop_na(transmission) %>% 
+  group_by(transmission) %>%
+  ggplot() +
+  geom_bar(aes(x=fct_infreq(transmission)),stat ="count")
+
+# Trading considering drive
+rawdata %>% 
+  drop_na(drive) %>% 
+  group_by(drive) %>%
+  ggplot() +
+  geom_bar(aes(x=fct_infreq(drive)),stat ="count")
+
+# Trading considering size
+rawdata %>% 
+  drop_na(size) %>% 
+  group_by(size) %>%
+  ggplot() +
+  geom_bar(aes(x=fct_infreq(size)),stat ="count")
+
+# Trading considering type
+rawdata %>% 
+  drop_na(type) %>% 
+  group_by(type) %>%
+  ggplot() +
+  geom_bar(aes(x=fct_infreq(type)),stat ="count")
+
+# Trading considering Paint Colour
+rawdata %>% 
+  drop_na(paint_color) %>% 
+  group_by(paint_color) %>%
+  ggplot() +
+  geom_bar(aes(x=fct_infreq(paint_color)),stat ="count")
+
+
+
+
+# Model development 
+cleandata_model<-lm(data=cleandata_price, price ~ state + manufacturer + condition + cylinders+ fuel+ odometer+ transmission+ drive + size + type + paint_color)
+head(fortify(cleandata_model))
+plot(cleandata_model)
+summary(cleandata_model)
+dev.off()
+##################################################################################
+
+
+# # Trading considering the lat and long
+# 
+# 
+# vehiclemap<-map_data('state')
+# 
+#   ggplot()+
+#   geom_polygon(data=vehiclemap,aes(x=long, y=lat, group = group),color="white", fill="grey28")+
+#   geom_point(data=rawdata, aes(x=long,y=lat),alpha = .5)
+# 
+# # 
+
+library(GGally)
+
+
+
+
+
+
+
+
+
+# finaldata %>% 
+#   group_by(manufacturer) %>%
+#   summarise(Count = n()) %>%
+#   ggplot(aes(reorder(manufacturer, Count),count)) +
+#   geom_bar(stat = "identity") + 
+#   coord_flip()
+
+finaldata %>% 
+  group_by(manufacturer) %>%
+  #   summarise(Count = n())
+  
+  
+  
+  
+  # hist(mydata$price)
+  # boxplot(mydata$price)
+  # findout<- boxplot.stats(mydata$price)
+  # min(findout$out)
+  
+  ## the majority trading is below 38905 USD, so we focus our interest on the trading dataset that are below 38905 USD ##
+#mydata2<- mydata %>% 
+#  filter(mydata$price is.na & mydata$price != 0 )
+
+# mydata3<- mydata %>%
+#                  filter(mydata$price <38905 & mydata$price != 0 )
+# boxplot(mydata3$price)
+# hist(mydata3$price,breaks= 500)
+# nrow(mydata3)/nrow(mydata)*100
+
+## our dataset in consideration will be the mydata3 dataset ##
+
+##to be continued
+
+
+
